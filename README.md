@@ -34,6 +34,20 @@ number of phases, average and longest phase, a pressing-time balance bar, a **ma
 - Extras: match clock, **Undo last** (also undoes phase changes), **Export CSV**, **Reset match**.
 - Data is stored in the browser (`localStorage`), so a page reload does not lose the match.
 
+## Apps for each operator
+
+| App | Link | Records |
+| --- | --- | --- |
+| **Operator 1** (blue) | <https://p4t4s3k.github.io/Pressing_stats/operator1.html> | Team A (my team): *We press* + Successful / Unsuccessful |
+| **Operator 2** (orange) | <https://p4t4s3k.github.io/Pressing_stats/operator2.html> | Team B (opponent): *Under pressure* + Successful / Unsuccessful |
+| **Report** | <https://p4t4s3k.github.io/Pressing_stats/report.html> | nothing, live report for the coach |
+| Both teams | <https://p4t4s3k.github.io/Pressing_stats/> | everything on one device |
+
+Install each one on its phone as a separate app: open the link, then
+**Android/Chrome:** menu ⋮ → *Add to Home screen* / *Install app*;
+**iPhone/Safari:** Share → *Add to Home Screen*.
+Each app has its own name, colour and icon (1, 2, R) and remembers the last match code.
+
 ## Two operators with live sync
 
 One operator records **Team A** (my team), the other records **Team B** (opponent), each on their own phone.

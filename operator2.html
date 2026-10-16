@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operator 2 · Team B – Pressing Stats</title>
+<meta name="theme-color" content="#e07a10">
+<link rel="manifest" href="manifest-b.webmanifest">
+<link rel="icon" href="icons/b-192.png">
+<link rel="apple-touch-icon" href="icons/b-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Press Op 2">
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f5f7;color:#1c2230}p{padding:16px}</style>
+</head>
+<body>
+<p>Opening Operator 2 · Team B… <a id="go" href="index.html?r=B">Continue</a></p>
+<script>
+  // Operator 2 · Team B app: open the main app locked to this role, keeping a match code (?m=...) if given.
+  var q = location.search.replace(/^\?/, '');
+  location.replace('index.html?r=B' + (q ? '&' + q : ''));
+</script>
+</body>
+</html>

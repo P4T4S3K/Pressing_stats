@@ -4,12 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pressing Stats</title>
+<meta name="theme-color" id="themeColor" content="#1c2230">
+<link rel="manifest" id="manifestLink" href="manifest-both.webmanifest">
+<link rel="icon" id="favicon" href="icons/both-192.png">
+<link rel="apple-touch-icon" id="appleIcon" href="icons/both-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" id="appleTitle" content="Pressing">
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="role-both">
 <header class="topbar">
   <div class="brand">
-    <h1>Pressing Stats</h1>
+    <h1 id="appTitle">Pressing Stats</h1>
     <span class="sync-pill" id="syncPill">This device only</span>
   </div>
   <div class="clock">
@@ -21,15 +27,15 @@
 
 <section id="setup" class="setup" hidden>
   <h2>Match setup</h2>
-  <p class="hint">Both operators must join the <b>same match code</b>. Each one then picks their role.</p>
+  <p class="hint" id="setupHint">Both operators must join the <b>same match code</b>. Each one then picks their role.</p>
   <div class="code-row">
     <label for="matchCode">Match code</label>
     <input id="matchCode" autocomplete="off" autocapitalize="characters" spellcheck="false">
     <button id="newCodeBtn" class="ctrl">New code</button>
   </div>
   <div class="role-buttons">
-    <button class="role role-a" data-role="A"><b>Operator Team A</b><span>My team: we press</span></button>
-    <button class="role role-b" data-role="B"><b>Operator Team B</b><span>Opponent: we are under pressure</span></button>
+    <button class="role role-a" data-role="A"><b>Operator 1 · Team A</b><span>My team: we press</span></button>
+    <button class="role role-b" data-role="B"><b>Operator 2 · Team B</b><span>Opponent: we are under pressure</span></button>
     <button class="role role-view" data-role="view"><b>Report only</b><span>Coach / bench, no buttons</span></button>
     <button class="role role-both" data-role="both"><b>Both teams</b><span>One device records everything</span></button>
   </div>

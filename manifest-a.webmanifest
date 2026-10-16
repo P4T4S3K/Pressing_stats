@@ -1,0 +1,23 @@
+{
+  "name": "Pressing – Operator 1 (Team A)",
+  "short_name": "Press Op 1",
+  "start_url": "operator1.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f5f7",
+  "theme_color": "#1e5bd8",
+  "icons": [
+    {
+      "src": "icons/a-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/a-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

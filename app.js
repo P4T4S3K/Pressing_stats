@@ -5,7 +5,15 @@
   var PERIOD_MIN = 15;
   var PERIOD_MS = PERIOD_MIN * 60000;
   var QR_LIB = 'vendor/qrcode.js';
-  var ROLES = { A: 'Operator Team A', B: 'Operator Team B', view: 'Report only', both: 'Both teams' };
+  var LAST_CODE_KEY = 'pressing-last-code';
+  var ROLES = { A: 'Operator 1 · Team A', B: 'Operator 2 · Team B', view: 'Report only', both: 'Both teams' };
+  // Each role is its own installable app: entry page, manifest, icon, home-screen title and colour.
+  var APPS = {
+    A: { page: 'operator1.html', icon: 'a', title: 'Press Op 1', color: '#1e5bd8' },
+    B: { page: 'operator2.html', icon: 'b', title: 'Press Op 2', color: '#e07a10' },
+    view: { page: 'report.html', icon: 'view', title: 'Press Report', color: '#1c2230' },
+    both: { page: 'index.html', icon: 'both', title: 'Pressing', color: '#1c2230' }
+  };
 
   // Team A = my team, Team B = opponent.
   // Roles: A / B = one operator per team (live sync), view = report only, both = one device for everything.
@@ -14,7 +22,8 @@
   var syncAvailable = !!(config && config.databaseURL);
   var localOnly = !syncAvailable || params.get('local') === '1';
   var matchCode = sanitizeCode(params.get('m'));
-  var role = localOnly ? 'both' : (ROLES[params.get('r')] ? params.get('r') : 'both');
+  var role = ROLES[params.get('r')] ? params.get('r') : 'both';
+  var lockedRole = role !== 'both';   // opened from the Operator 1 / Operator 2 / Report app
 
   var store = null;
   var S = null;          // current match state from the store
@@ -36,7 +45,8 @@
   }
 
   function roleUrl(code, r) {
-    return location.origin + location.pathname + '?m=' + encodeURIComponent(code) + '&r=' + r;
+    var dir = location.origin + location.pathname.replace(/[^/]*$/, '');
+    return dir + APPS[r].page + '?m=' + encodeURIComponent(code);
   }
 
   function loadOps() {
@@ -126,6 +136,7 @@
     }
     ops.push(op);
     saveOps();
+    $('undoBtn').disabled = false;
     if (navigator.vibrate) navigator.vibrate(40);
   }
 
@@ -297,8 +308,8 @@
     var pill = $('syncPill');
     var text, cls;
     if (store.mode === 'local') {
-      text = 'This device only';
-      cls = 'local';
+      text = role === 'both' ? 'This device only' : ROLES[role] + ' · not synced (this phone only)';
+      cls = role === 'both' ? 'local' : 'offline';
     } else if (status === 'online') {
       text = 'Live · ' + matchCode + ' · ' + ROLES[role];
       cls = 'online';
@@ -322,6 +333,7 @@
     var id = store.addEvent({ team: team, result: result, ms: clockNow(), at: new Date().toISOString() });
     ops.push([{ t: 'event', id: id }]);
     saveOps();
+    $('undoBtn').disabled = false;
     if (navigator.vibrate) navigator.vibrate(30);
     btn.classList.add('flash');
     setTimeout(function () { btn.classList.remove('flash'); }, 120);
@@ -406,7 +418,17 @@
     $('setup').hidden = false;
     $('main').hidden = !inMatch;
     $('closeSetupBtn').hidden = !inMatch;
-    $('matchCode').value = matchCode || randomCode();
+    var last = '';
+    try { last = localStorage.getItem(LAST_CODE_KEY) || ''; } catch (e) { /* ignore */ }
+    $('matchCode').value = matchCode || last || randomCode();
+    // Operator apps only offer their own role.
+    document.querySelectorAll('.role').forEach(function (b) {
+      b.hidden = lockedRole && b.dataset.role !== role;
+    });
+    if (lockedRole) {
+      $('setupHint').innerHTML = '<b>' + esc(ROLES[role]) + '</b>: enter the <b>same match code</b> as the other ' +
+        'operator, then tap the button below. Operator 1 can show a QR code with the code under <b>Match</b>.';
+    }
     if (inMatch) renderShare();
     window.scrollTo(0, 0);
   }
@@ -422,6 +444,7 @@
       $('matchCode').focus();
       return;
     }
+    try { localStorage.setItem(LAST_CODE_KEY, code); } catch (e) { /* ignore */ }
     location.href = roleUrl(code, r);
   }
 
@@ -514,11 +537,26 @@
     }, 500);
   }
 
+  function applyAppIdentity() {
+    var app = APPS[role];
+    document.title = (role === 'both' ? '' : ROLES[role] + ' – ') + 'Pressing Stats';
+    if (role !== 'both') $('appTitle').textContent = role === 'view' ? 'Pressing Report' : ROLES[role].split(' · ')[0];
+    $('manifestLink').href = 'manifest-' + app.icon + '.webmanifest';
+    $('favicon').href = $('appleIcon').href = 'icons/' + app.icon + '-192.png';
+    $('appleTitle').content = app.title;
+    $('themeColor').content = app.color;
+  }
+
   function init() {
     document.body.className = 'role-' + role;
+    applyAppIdentity();
     bindUi();
     $('matchBtn').hidden = !syncAvailable;
     $('localLink').hidden = !syncAvailable;
+    $('localLink').href = '?local=1' + (lockedRole ? '&r=' + role : '');
+    if (matchCode && !localOnly) {
+      try { localStorage.setItem(LAST_CODE_KEY, matchCode); } catch (e) { /* ignore */ }
+    }
 
     if (localOnly) {
       PressingStore.local(LOCAL_KEY).then(start);

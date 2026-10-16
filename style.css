@@ -305,3 +305,8 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
 
 .ctrl:disabled { opacity: .45; cursor: default; }
 [hidden] { display: none !important; }
+
+/* Operator apps: header in the team colour */
+.role-A .topbar { background: var(--team-a); }
+.role-B .topbar { background: var(--team-b); }
+.role-A .sync-pill, .role-B .sync-pill { box-shadow: 0 0 0 1px rgba(255, 255, 255, .6); }

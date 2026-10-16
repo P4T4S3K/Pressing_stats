@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report – Pressing Stats</title>
+<meta name="theme-color" content="#1c2230">
+<link rel="manifest" href="manifest-view.webmanifest">
+<link rel="icon" href="icons/view-192.png">
+<link rel="apple-touch-icon" href="icons/view-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Press Report">
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f5f7;color:#1c2230}p{padding:16px}</style>
+</head>
+<body>
+<p>Opening Report… <a id="go" href="index.html?r=view">Continue</a></p>
+<script>
+  // Report app: open the main app locked to this role, keeping a match code (?m=...) if given.
+  var q = location.search.replace(/^\?/, '');
+  location.replace('index.html?r=view' + (q ? '&' + q : ''));
+</script>
+</body>
+</html>
