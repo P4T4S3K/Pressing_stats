@@ -27,7 +27,8 @@
 
   var store = null;
   var S = null;          // current match state from the store
-  var ops = [];          // this device's undo history; each entry lists the changes made by one tap
+  var ops = [];          // this device's undo history: one { team, label, ms, changes } per tap
+  var toastTimer = null;
   var opsKey = 'pressing-undo:' + (localOnly ? 'local' : matchCode + ':' + role);
   var tickCount = 0;
 
@@ -51,6 +52,8 @@
 
   function loadOps() {
     try { ops = JSON.parse(localStorage.getItem(opsKey)) || []; } catch (e) { ops = []; }
+    // Older versions stored only the list of changes.
+    ops = ops.map(function (o) { return Array.isArray(o) ? { team: null, label: 'last tap', ms: 0, changes: o } : o; });
   }
 
   function saveOps() {
@@ -96,6 +99,7 @@
 
   var KINDS = ['press', 'under'];
   var KIND_LABEL = { press: 'we press', under: 'under pressure' };
+  var KIND_TITLE = { press: 'We press', under: 'Under pressure' };
 
   function openPhase(team) {
     for (var i = S.phases.length - 1; i >= 0; i--) {
@@ -132,18 +136,19 @@
   // and switches directly when the team's other phase is running.
   function togglePhase(team, kind) {
     var now = S.clock.running ? clockNow() : startClock();
-    var op = [];
+    var changes = [];
     var open = openPhase(team);
+    var label;
     if (open) {
       store.updatePhase(open.id, { endMs: now });
-      op.push({ t: 'end', id: open.id });
+      changes.push({ t: 'end', id: open.id });
+      label = 'end ' + KIND_TITLE[open.kind];
     }
     if (!open || open.kind !== kind) {
-      op.push({ t: 'start', id: store.addPhase({ team: team, kind: kind, startMs: now }) });
+      changes.push({ t: 'start', id: store.addPhase({ team: team, kind: kind, startMs: now }) });
+      label = (open ? 'switch to ' : 'start ') + KIND_TITLE[kind];
     }
-    ops.push(op);
-    saveOps();
-    $('undoBtn').disabled = false;
+    addOp(team, label, now, changes);
     if (navigator.vibrate) navigator.vibrate(40);
   }
 
@@ -216,7 +221,7 @@
     });
     $('rateBars').innerHTML = bars;
 
-    $('undoBtn').disabled = !ops.length;
+    renderUndo();
     if (!$('combine').hidden) renderSendSummary();
     renderTimeline(now);
     renderPeriods(now);
@@ -340,34 +345,81 @@
   // ---- Actions ----
 
   function record(team, kind, result, btn) {
-    var id = store.addEvent({ team: team, kind: kind, result: result, ms: clockNow(), at: new Date().toISOString() });
-    ops.push([{ t: 'event', id: id }]);
-    saveOps();
-    $('undoBtn').disabled = false;
+    var ms = clockNow();
+    var id = store.addEvent({ team: team, kind: kind, result: result, ms: ms, at: new Date().toISOString() });
+    addOp(team, RESULT_LABEL[result] + ' · ' + KIND_LABEL[kind], ms, [{ t: 'event', id: id }]);
     if (navigator.vibrate) navigator.vibrate(30);
     btn.classList.add('flash');
     setTimeout(function () { btn.classList.remove('flash'); }, 120);
   }
 
+  // ---- Undo ----
+
   function exists(list, id) {
     return list.some(function (x) { return x.id === id; });
   }
 
-  // Undo this device's last tap. Skips taps whose data is already gone (e.g. after a reset).
-  function undo() {
-    while (ops.length) {
-      var op = ops.pop();
-      var applied = false;
-      for (var i = op.length - 1; i >= 0; i--) {
-        var c = op[i];
-        if (c.t === 'event' && exists(S.events, c.id)) { store.removeEvent(c.id); applied = true; }
-        else if (c.t === 'start' && exists(S.phases, c.id)) { store.removePhase(c.id); applied = true; }
-        else if (c.t === 'end' && exists(S.phases, c.id)) { store.updatePhase(c.id, { endMs: null }); applied = true; }
-      }
-      if (applied) break;
+  // A tap can be undone while its data still exists (it is gone e.g. after a reset or new stats were added).
+  function canUndo(op) {
+    return op.changes.some(function (c) {
+      return c.t === 'event' ? exists(S.events, c.id) : exists(S.phases, c.id);
+    });
+  }
+
+  // Index of this device's last tap for the team that can still be undone, or -1.
+  function lastOp(team) {
+    for (var i = ops.length - 1; i >= 0; i--) {
+      if ((ops[i].team === team || ops[i].team === null) && canUndo(ops[i])) return i;
     }
+    return -1;
+  }
+
+  function addOp(team, label, ms, changes) {
+    ops.push({ team: team, label: label, ms: ms, changes: changes });
+    saveOps();
+    renderUndo();
+    showToast(team, label, ms);
+  }
+
+  function undo(team) {
+    var i = lastOp(team);
+    if (i < 0) return;
+    var op = ops[i];
+    for (var j = op.changes.length - 1; j >= 0; j--) {
+      var c = op.changes[j];
+      if (c.t === 'event' && exists(S.events, c.id)) store.removeEvent(c.id);
+      else if (c.t === 'start' && exists(S.phases, c.id)) store.removePhase(c.id);
+      else if (c.t === 'end' && exists(S.phases, c.id)) store.updatePhase(c.id, { endMs: null });
+    }
+    ops.splice(i, 1);
     saveOps();
     render();
+    showToast(null, 'Undone: ' + op.label + ' (' + fmtClock(op.ms) + ')');
+    if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+  }
+
+  function renderUndo() {
+    ['A', 'B'].forEach(function (k) {
+      var i = lastOp(k);
+      var btn = $('undo' + k);
+      btn.disabled = i < 0;
+      btn.innerHTML = '↶ Undo' + (i < 0 ? '' :
+        '<small>' + esc(ops[i].label) + ' (' + fmtClock(ops[i].ms) + ')</small>');
+    });
+  }
+
+  // Short confirmation after each tap, with an Undo button for mistakes.
+  function showToast(team, label, ms) {
+    var t = $('toast');
+    $('toastText').textContent = team ? '✓ ' + S.names[team] + ': ' + label + ' (' + fmtClock(ms) + ')' : label;
+    $('toastUndo').hidden = !team;
+    $('toastUndo').dataset.team = team || '';
+    t.hidden = false;
+    t.classList.remove('show');
+    void t.offsetWidth;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, team ? 4000 : 2000);
   }
 
   // Starts the shared match clock and returns the match time it starts from.
@@ -709,7 +761,13 @@
       });
     });
     $('clockBtn').addEventListener('click', toggleClock);
-    $('undoBtn').addEventListener('click', undo);
+    ['A', 'B'].forEach(function (k) {
+      $('undo' + k).addEventListener('click', function () { undo(k); });
+    });
+    $('toastUndo').addEventListener('click', function () {
+      $('toast').hidden = true;
+      if ($('toastUndo').dataset.team) undo($('toastUndo').dataset.team);
+    });
     $('csvBtn').addEventListener('click', exportCsv);
     $('resetBtn').addEventListener('click', resetMatch);
     $('combineBtn').addEventListener('click', openCombine);

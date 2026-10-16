@@ -77,6 +77,7 @@
         </div>
       </div>
       <p class="phase-status" id="statusA"></p>
+      <button class="undo-btn" id="undoA" data-team="A" disabled>↶ Undo</button>
     </div>
     <div class="team team-b" data-team="B">
       <div class="team-role">Opponent</div>
@@ -102,12 +103,12 @@
         </div>
       </div>
       <p class="phase-status" id="statusB"></p>
+      <button class="undo-btn" id="undoB" data-team="B" disabled>↶ Undo</button>
     </div>
   </section>
 
   <div class="toolbar">
     <button id="combineBtn" class="ctrl primary">Send / add stats</button>
-    <button id="undoBtn" class="ctrl">Undo my last</button>
     <button id="csvBtn" class="ctrl">Export CSV</button>
     <button id="resetBtn" class="ctrl danger">Reset match</button>
   </div>
@@ -215,6 +216,11 @@
     <ol id="log" class="log"></ol>
   </section>
 </main>
+
+<div id="toast" class="toast" role="status" hidden>
+  <span id="toastText"></span>
+  <button id="toastUndo" class="toast-undo">Undo</button>
+</div>
 
 <script src="config.js"></script>
 <script src="store.js"></script>

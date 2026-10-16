@@ -26,7 +26,11 @@ Plus the time balance *we press vs. under pressure*, success-rate bars, a **matc
 (solid bars = we press, striped = under pressure, round dots = actions when pressing, square dots = actions
 under pressure), a breakdown per 15-minute period and an event log.
 
-Extras: match clock, **Undo my last** (also undoes phase changes), **Export CSV**, **Reset match**.
+**Tapped by mistake?** Every team panel has a big **↶ Undo** button that shows exactly what it will remove
+(e.g. *Unsuccessful · we press (12:30)*), and after each tap a short message appears at the bottom with an
+**Undo** button. Undo works step by step, also for phase taps, and only removes taps made on that phone.
+
+Extras: match clock, **Export CSV**, **Reset match**.
 Data is stored in the browser (`localStorage`), so a page reload does not lose the match.
 
 ## Apps for each operator
@@ -71,7 +75,7 @@ Both see the same match clock and the same live report. A coach can follow along
 3. Tap **Match** (top right) to show links and QR codes for the other devices. Scan to join the same match.
 
 Each operator starts and ends their own team's pressing phases. Either operator can start/pause the shared
-clock. **Undo my last** only undoes taps made on that device. **Reset match** clears the match for everyone.
+clock. **Undo** only undoes taps made on that device. **Reset match** clears the match for everyone.
 If the connection drops, taps are kept and synced when the phone is back online.
 
 Live sync needs the one-time Firebase setup below. Without it, the app works on a single device as before.
