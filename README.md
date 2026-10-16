@@ -24,7 +24,7 @@ For both teams, separately **when we press** and **when under pressure**: number
 unsuccessful, success rate, time, share of match time, number of phases, average and longest phase.
 Plus the time balance *we press vs. under pressure*, success-rate bars, a **match timeline**
 (solid bars = we press, striped = under pressure, round dots = actions when pressing, square dots = actions
-under pressure), a breakdown per 15-minute period and an event log.
+under pressure), a breakdown per 20-minute period and an event log.
 
 **Tapped by mistake?** Every team panel has a big **↶ Undo** button that shows exactly what it will remove
 (e.g. *Unsuccessful · we press (12:30)*), and after each tap a short message appears at the bottom with an

@@ -2,7 +2,7 @@
   'use strict';
 
   var LOCAL_KEY = 'pressing-stats-v1';
-  var PERIOD_MIN = 15;
+  var PERIOD_MIN = 20;
   var PERIOD_MS = PERIOD_MIN * 60000;
   var QR_LIB = 'vendor/qrcode.js';
   var LAST_CODE_KEY = 'pressing-last-code';
@@ -251,7 +251,7 @@
     if (now > 0) html += '<div class="tl-now" style="left:' + x(now) + '"></div>';
     $('timeline').innerHTML = html;
 
-    var step = span <= 30 * 60000 ? 5 : 15;
+    var step = span <= 40 * 60000 ? 5 : 10;
     var axis = '';
     for (var m = 0; m <= span / 60000; m += step) {
       axis += '<span style="left:' + x(m * 60000) + '">' + m + "'</span>";
