@@ -2,7 +2,8 @@
 // Both stores keep the same tree:
 //   names:  { A, B }
 //   clock:  { running, clockMs, startedAt }   startedAt is in (server) wall-clock ms
-//   events: { id: { team, result, ms, at } }  pressing actions
+//   events: { id: { team, kind, result, ms, at } }  actions; kind 'press' = while pressing,
+//                                                    'under' = while under pressure
 //   phases: { id: { team, kind, startMs, endMs } }  kind 'press' = team presses, 'under' = team is under pressure;
 //                                                    endMs missing while running
 (function () {
@@ -46,7 +47,14 @@
     Object.keys(events).forEach(function (id) {
       var e = events[id];
       if (!e || (e.team !== 'A' && e.team !== 'B')) return;
-      s.events.push({ id: id, team: e.team, result: e.result === 'ok' ? 'ok' : 'ko', ms: e.ms || 0, at: e.at || '' });
+      s.events.push({
+        id: id,
+        team: e.team,
+        kind: e.kind === 'under' ? 'under' : 'press',
+        result: e.result === 'ok' ? 'ok' : 'ko',
+        ms: e.ms || 0,
+        at: e.at || ''
+      });
     });
     var phases = raw.phases || {};
     Object.keys(phases).forEach(function (id) {

@@ -1,46 +1,40 @@
 # Pressing Stats
 
-A lightweight web app for recording **pressing actions** of two teams during a football match and showing a live statistics report.
+A lightweight web app for recording **pressing** and **under-pressure** situations of two teams during a football match and showing a live statistics report.
 
 ## How it works
 
-### Pressing phases – "We press" and "Under pressure"
+### What each operator records
 
-Each team has two phase buttons:
+Each team has two columns, one per situation:
 
-- **We press**: the team is pressing.
-- **Under pressure**: the team is being pressed.
+| We press | Under pressure |
+| --- | --- |
+| phase button with timer | phase button with timer |
+| 🟢 **Successful**: the press won the ball / forced the desired outcome | 🟢 **Successful**: escaped the press, kept the ball |
+| 🔴 **Unsuccessful**: the press was beaten | 🔴 **Unsuccessful**: lost the ball under pressure |
 
-Tap a button when the phase starts and tap it again when it ends. Tapping the other button switches
-directly. Operator 1 records Team A's phases, Operator 2 records Team B's phases. The match clock starts
-automatically with the first phase.
+Tap a phase button when the phase starts and tap it again when it ends; tapping the other phase button
+switches directly. Operator 1 records Team A, Operator 2 records Team B. The match clock starts
+automatically with the first phase. Click a team name to rename it.
 
-The report shows for both teams: time pressing, time under pressure, their ratio, share of match time,
-number of phases, average and longest phase, a *we press vs. under pressure* bar, a **match timeline**
-(solid bars = we press, striped = under pressure, dots = pressing actions) and times per 15-minute period.
+### Report
 
-### Pressing actions
+For both teams, separately **when we press** and **when under pressure**: number of actions, successful,
+unsuccessful, success rate, time, share of match time, number of phases, average and longest phase.
+Plus the time balance *we press vs. under pressure*, success-rate bars, a **match timeline**
+(solid bars = we press, striped = under pressure, round dots = actions when pressing, square dots = actions
+under pressure), a breakdown per 15-minute period and an event log.
 
-- Each team has its own panel and colour (**Team A – blue**, **Team B – orange**).
-- In each panel there are just two buttons:
-  - 🟢 **Successful** – the press won the ball / forced the desired outcome
-  - 🔴 **Unsuccessful** – the press was beaten
-- Click a team name to rename it.
-- The **Report** below the buttons updates instantly:
-  - total, successful and unsuccessful pressing actions per team
-  - success rate and share of all pressing actions
-  - success-rate bars
-  - breakdown by 15-minute periods (uses the optional match clock)
-  - event log
-- Extras: match clock, **Undo last** (also undoes phase changes), **Export CSV**, **Reset match**.
-- Data is stored in the browser (`localStorage`), so a page reload does not lose the match.
+Extras: match clock, **Undo my last** (also undoes phase changes), **Export CSV**, **Reset match**.
+Data is stored in the browser (`localStorage`), so a page reload does not lose the match.
 
 ## Apps for each operator
 
 | App | Link | Records |
 | --- | --- | --- |
-| **Operator 1** (blue) | <https://p4t4s3k.github.io/Pressing_stats/operator1.html> | Team A (my team): *We press* / *Under pressure* + Successful / Unsuccessful |
-| **Operator 2** (orange) | <https://p4t4s3k.github.io/Pressing_stats/operator2.html> | Team B (opponent): *We press* / *Under pressure* + Successful / Unsuccessful |
+| **Operator 1** (blue) | <https://p4t4s3k.github.io/Pressing_stats/operator1.html> | Team A (my team): *We press* and *Under pressure*, each with Successful / Unsuccessful |
+| **Operator 2** (orange) | <https://p4t4s3k.github.io/Pressing_stats/operator2.html> | Team B (opponent): *We press* and *Under pressure*, each with Successful / Unsuccessful |
 | **Report** | <https://p4t4s3k.github.io/Pressing_stats/report.html> | nothing, live report for the coach |
 | Both teams | <https://p4t4s3k.github.io/Pressing_stats/> | everything on one device |
 

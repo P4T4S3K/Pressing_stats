@@ -77,11 +77,18 @@
     });
   }
 
+  // Successful / unsuccessful actions per team and situation (press / under).
   function tally(events) {
-    var t = { A: { ok: 0, ko: 0 }, B: { ok: 0, ko: 0 } };
-    events.forEach(function (e) { t[e.team][e.result]++; });
+    var t = {
+      A: { press: { ok: 0, ko: 0 }, under: { ok: 0, ko: 0 } },
+      B: { press: { ok: 0, ko: 0 }, under: { ok: 0, ko: 0 } }
+    };
+    events.forEach(function (e) { t[e.team][e.kind][e.result]++; });
     return t;
   }
+
+  var RESULT_LABEL = { ok: 'Successful', ko: 'Unsuccessful' };
+  var SITUATION_LABEL = { press: 'when pressing', under: 'under pressure' };
 
   // ---- Pressing phases ----
   // Each team has two phase kinds: 'press' (we press) and 'under' (we are under pressure).
@@ -165,51 +172,49 @@
   function render() {
     var now = clockNow();
     var t = tally(S.events);
-    var all = t.A.ok + t.A.ko + t.B.ok + t.B.ko;
     var ptime = phaseTime(now);
+    var bars = '';
 
     ['A', 'B'].forEach(function (k) {
       var name = S.names[k];
-      var tot = t[k].ok + t[k].ko;
       if (document.activeElement !== $('name' + k)) $('name' + k).value = name;
-      ['head', 'perHead', 'barLabel', 'balLabel', 'tlName'].forEach(function (p) { $(p + k).textContent = name; });
-      $('count' + k + '-ok').textContent = t[k].ok;
-      $('count' + k + '-ko').textContent = t[k].ko;
-      $('tot' + k).textContent = tot;
-      $('ok' + k).textContent = t[k].ok;
-      $('ko' + k).textContent = t[k].ko;
-      $('rate' + k).textContent = pct(t[k].ok, tot);
-      $('share' + k).textContent = pct(tot, all);
+      ['head', 'perHead', 'balLabel', 'tlName'].forEach(function (p) { $(p + k).textContent = name; });
 
-      var ps = phaseStats(k, 'press', now);
-      var us = phaseStats(k, 'under', now);
-      $('ptime' + k).textContent = fmtClock(ps.total);
-      $('utime' + k).textContent = fmtClock(us.total);
-      $('pshare' + k).textContent = ps.total + us.total ?
-        pct(ps.total, ps.total + us.total) + ' / ' + pct(us.total, ps.total + us.total) : '–';
-      $('pmatch' + k).textContent = pct(ps.total, now);
-      $('umatch' + k).textContent = pct(us.total, now);
-      $('pcount' + k).textContent = ps.count;
-      $('ucount' + k).textContent = us.count;
-      $('pavg' + k).textContent = ps.count ? fmtClock(ps.avg) : '–';
-      $('pmax' + k).textContent = ps.count ? fmtClock(ps.max) : '–';
-      $('umax' + k).textContent = us.count ? fmtClock(us.max) : '–';
+      KINDS.forEach(function (kind) {
+        var c = t[k][kind];
+        var tot = c.ok + c.ko;
+        var ps = phaseStats(k, kind, now);
+        var x = kind === 'press' ? 'p' : 'u';
+        $('cnt' + k + '-' + kind + '-ok').textContent = c.ok;
+        $('cnt' + k + '-' + kind + '-ko').textContent = c.ko;
+        $(x + 'Tot' + k).textContent = tot;
+        $(x + 'Ok' + k).textContent = c.ok;
+        $(x + 'Ko' + k).textContent = c.ko;
+        $(x + 'Rate' + k).textContent = pct(c.ok, tot);
+        $(x + 'Time' + k).textContent = fmtClock(ps.total);
+        $(x + 'Match' + k).textContent = pct(ps.total, now);
+        $(x + 'Count' + k).textContent = ps.count;
+        $(x + 'Avg' + k).textContent = ps.count ? fmtClock(ps.avg) : '–';
+        $(x + 'Max' + k).textContent = ps.count ? fmtClock(ps.max) : '–';
 
-      var okW = tot ? (t[k].ok / tot) * 100 : 0;
-      var koW = tot ? 100 - okW : 0;
-      $('barOk' + k).style.width = okW + '%';
-      $('barKo' + k).style.width = koW + '%';
-      $('barOk' + k).textContent = okW >= 12 ? Math.round(okW) + '%' : '';
-      $('barKo' + k).textContent = koW >= 12 ? Math.round(koW) + '%' : '';
+        var okW = tot ? (c.ok / tot) * 100 : 0;
+        var koW = tot ? 100 - okW : 0;
+        bars += '<div class="bar-row rate-row"><span class="bar-label tag-' + k.toLowerCase() + '">' + esc(name) +
+          '<small>' + (kind === 'press' ? 'we press' : 'under pressure') + '</small></span><div class="bar">' +
+          '<div class="bar-ok" style="width:' + okW + '%">' + (okW >= 15 ? Math.round(okW) + '%' : '') + '</div>' +
+          '<div class="bar-ko" style="width:' + koW + '%">' + (koW >= 15 ? Math.round(koW) + '%' : '') + '</div></div></div>';
+      });
 
       var pu = ptime[k].press + ptime[k].under;
       var pw = pu ? (ptime[k].press / pu) * 100 : 0;
       var uw = pu ? 100 - pw : 0;
+      $('ratio' + k).textContent = pu ? pct(ptime[k].press, pu) + ' / ' + pct(ptime[k].under, pu) : '–';
       $('balPress' + k).style.width = pw + '%';
       $('balUnder' + k).style.width = uw + '%';
       $('balPress' + k).textContent = pw >= 12 ? Math.round(pw) + '%' : '';
       $('balUnder' + k).textContent = uw >= 12 ? Math.round(uw) + '%' : '';
     });
+    $('rateBars').innerHTML = bars;
 
     $('undoBtn').disabled = !ops.length;
     if (!$('combine').hidden) renderSendSummary();
@@ -234,9 +239,9 @@
         esc(S.names[p.team]) + ': ' + KIND_LABEL[p.kind] + ' ' + fmtClock(p.startMs) + '–' + fmtClock(e) + '"></div>';
     });
     S.events.forEach(function (ev) {
-      html += '<div class="tl-dot ' + ev.team.toLowerCase() + ' ' + ev.result + '" style="left:' + x(ev.ms) +
-        '" title="' + fmtClock(ev.ms) + ' ' + esc(S.names[ev.team]) + ': ' +
-        (ev.result === 'ok' ? 'Successful' : 'Unsuccessful') + '"></div>';
+      html += '<div class="tl-dot ' + ev.team.toLowerCase() + ' ' + ev.kind + ' ' + ev.result + '" style="left:' + x(ev.ms) +
+        '" title="' + fmtClock(ev.ms) + ' ' + esc(S.names[ev.team]) + ': ' + RESULT_LABEL[ev.result] + ' ' +
+        SITUATION_LABEL[ev.kind] + '"></div>';
     });
     if (now > 0) html += '<div class="tl-now" style="left:' + x(now) + '"></div>';
     $('timeline').innerHTML = html;
@@ -252,7 +257,7 @@
   function renderPeriods(now) {
     var body = document.querySelector('#periodTable tbody');
     if (!S.events.length && !S.phases.length) {
-      body.innerHTML = '<tr><td colspan="7" class="empty">Nothing recorded yet.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5" class="empty">Nothing recorded yet.</td></tr>';
       return;
     }
     var lastMs = 0;
@@ -268,10 +273,14 @@
       }));
       var pt = phaseTime(now, from, to);
       var cell = function (k) {
-        var tot = t[k].ok + t[k].ko;
-        return '<td>' + (tot ? t[k].ok + ' / ' + tot + ' (' + pct(t[k].ok, tot) + ')' : '–') + '</td>' +
-          '<td>' + (pt[k].press ? fmtClock(pt[k].press) : '–') + '</td>' +
-          '<td>' + (pt[k].under ? fmtClock(pt[k].under) : '–') + '</td>';
+        return KINDS.map(function (kind) {
+          var c = t[k][kind];
+          var tot = c.ok + c.ko;
+          var parts = [];
+          if (tot) parts.push(c.ok + ' / ' + tot);
+          if (pt[k][kind]) parts.push(fmtClock(pt[k][kind]));
+          return '<td>' + (parts.length ? parts.join(' · ') : '–') + '</td>';
+        }).join('');
       };
       html += '<tr><td>' + (i * PERIOD_MIN) + '–' + ((i + 1) * PERIOD_MIN) + "'</td>" + cell('A') + cell('B') + '</tr>';
     }
@@ -282,7 +291,7 @@
     var items = [];
     S.events.forEach(function (e) {
       items.push({ ms: e.ms, html: '<span class="tag tag-' + e.team.toLowerCase() + '">' + esc(S.names[e.team]) +
-        '</span>: <span class="res-' + e.result + '">' + (e.result === 'ok' ? 'Successful' : 'Unsuccessful') + '</span> press' });
+        '</span>: <span class="res-' + e.result + '">' + RESULT_LABEL[e.result] + '</span> ' + SITUATION_LABEL[e.kind] });
     });
     S.phases.forEach(function (p) {
       var who = '<span class="tag tag-' + p.team.toLowerCase() + '">' + esc(S.names[p.team]) + '</span>';
@@ -330,8 +339,8 @@
 
   // ---- Actions ----
 
-  function record(team, result, btn) {
-    var id = store.addEvent({ team: team, result: result, ms: clockNow(), at: new Date().toISOString() });
+  function record(team, kind, result, btn) {
+    var id = store.addEvent({ team: team, kind: kind, result: result, ms: clockNow(), at: new Date().toISOString() });
     ops.push([{ t: 'event', id: id }]);
     saveOps();
     $('undoBtn').disabled = false;
@@ -374,9 +383,10 @@
 
   function exportCsv() {
     var now = clockNow();
-    var rows = [['#', 'match_time', 'team', 'result', 'timestamp']];
+    var rows = [['#', 'match_time', 'team', 'situation', 'result', 'timestamp']];
     S.events.forEach(function (e, i) {
-      rows.push([i + 1, fmtClock(e.ms), S.names[e.team], e.result === 'ok' ? 'Successful' : 'Unsuccessful', e.at]);
+      rows.push([i + 1, fmtClock(e.ms), S.names[e.team], e.kind === 'press' ? 'We press' : 'Under pressure',
+        RESULT_LABEL[e.result], e.at]);
     });
     rows.push([]);
     rows.push(['phase', 'team', 'situation', 'start', 'end', 'duration']);
@@ -387,12 +397,13 @@
     });
     var t = tally(S.events);
     rows.push([]);
-    rows.push(['summary', 'team', 'successful', 'unsuccessful', 'success_rate',
-      'time_we_press', 'pressing_phases', 'time_under_pressure', 'under_pressure_phases']);
+    rows.push(['summary', 'team', 'situation', 'successful', 'unsuccessful', 'success_rate', 'time', 'phases']);
     ['A', 'B'].forEach(function (k) {
-      var ps = phaseStats(k, 'press', now), us = phaseStats(k, 'under', now);
-      rows.push(['', S.names[k], t[k].ok, t[k].ko, pct(t[k].ok, t[k].ok + t[k].ko),
-        fmtClock(ps.total), ps.count, fmtClock(us.total), us.count]);
+      KINDS.forEach(function (kind) {
+        var c = t[k][kind], ps = phaseStats(k, kind, now);
+        rows.push(['', S.names[k], kind === 'press' ? 'We press' : 'Under pressure', c.ok, c.ko,
+          pct(c.ok, c.ok + c.ko), fmtClock(ps.total), ps.count]);
+      });
     });
     var csv = rows.map(function (r) {
       return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
@@ -437,7 +448,9 @@
     var d = { v: 2, t: teams, n: {}, c: Math.round(clockNow() / 100), e: [], p: [] };
     teams.forEach(function (k) { d.n[k] = S.names[k]; });
     S.events.forEach(function (e) {
-      if (teams.indexOf(e.team) >= 0) d.e.push([e.team, e.result === 'ok' ? 1 : 0, Math.round(e.ms / 100)]);
+      if (teams.indexOf(e.team) >= 0) {
+        d.e.push([e.team, e.result === 'ok' ? 1 : 0, Math.round(e.ms / 100), e.kind === 'under' ? 0 : 1]);
+      }
     });
     S.phases.forEach(function (p) {
       if (teams.indexOf(p.team) >= 0) {
@@ -481,7 +494,7 @@
 
   // Returns a message for the user, or null if they cancelled.
   function addPayload(d) {
-    var summary = teamsLabel(d) + ': ' + d.e.length + ' pressing actions, ' + d.p.length +
+    var summary = teamsLabel(d) + ': ' + d.e.length + ' actions, ' + d.p.length +
       ' phases, clock ' + fmtClock((d.c || 0) * 100);
     if (!confirm('Add stats to this report?\n\n' + summary +
         '\n\nEarlier stats of ' + teamsLabel(d) + ' on this device will be replaced.')) return null;
@@ -494,7 +507,9 @@
     });
     d.e.forEach(function (x) {
       if (d.t.indexOf(x[0]) < 0) return;
-      fields['events/' + store.newId('events')] = { team: x[0], result: x[1] ? 'ok' : 'ko', ms: (+x[2] || 0) * 100, at: '' };
+      fields['events/' + store.newId('events')] = {
+        team: x[0], kind: x[3] === 0 ? 'under' : 'press', result: x[1] ? 'ok' : 'ko', ms: (+x[2] || 0) * 100, at: ''
+      };
     });
     d.p.forEach(function (x) {
       if (d.t.indexOf(x[0]) < 0) return;
@@ -517,7 +532,7 @@
 
   function renderSendSummary() {
     var d = buildPayload();
-    $('sendSummary').textContent = teamsLabel(d) + ': ' + d.e.length + ' pressing actions, ' +
+    $('sendSummary').textContent = teamsLabel(d) + ': ' + d.e.length + ' actions (successful / unsuccessful), ' +
       d.p.length + ' phases (we press / under pressure), clock ' + fmtClock(d.c * 100) + '.';
   }
 
@@ -683,7 +698,7 @@
 
   function bindUi() {
     document.querySelectorAll('.press').forEach(function (btn) {
-      btn.addEventListener('click', function () { record(btn.dataset.team, btn.dataset.result, btn); });
+      btn.addEventListener('click', function () { record(btn.dataset.team, btn.dataset.kind, btn.dataset.result, btn); });
     });
     document.querySelectorAll('.phase').forEach(function (btn) {
       btn.addEventListener('click', function () { togglePhase(btn.dataset.team, btn.dataset.kind); });

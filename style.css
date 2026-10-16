@@ -221,10 +221,9 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
   .team { padding: 12px 8px; }
   .team-name { font-size: 1.05rem; }
   .counts { font-size: 1.3rem; }
-  .press { font-size: 1rem; padding: 24px 4px; }
+  .press { font-size: 1rem; padding: 22px 4px; }
   .phase-title { font-size: .9rem; }
-  .role-both .phase-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-  .role-both .phase { flex-direction: row; justify-content: space-between; padding: 10px; }
+  .role-both .teams { grid-template-columns: minmax(0, 1fr); }
   .phase { padding: 12px 4px; }
 }
 
@@ -339,4 +338,20 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
 .combine-msg.err { color: var(--ko); }
 @media (max-width: 600px) {
   .combine-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- Two columns per team: "We press" and "Under pressure", each with its own actions ---- */
+.kind-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 10px; row-gap: 8px; }
+/* Both columns share rows, so the phase and action buttons line up side by side. */
+.kind-col { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 8px; min-width: 0; }
+.kind-col .phase { justify-content: center; }
+.kind-col .counts { font-size: 1.3rem; }
+.kind-under .press { outline-style: dashed; }
+.role-A .press, .role-B .press { padding: 30px 6px; font-size: 1.25rem; }
+.table-note { margin: -4px 0 6px; font-size: .8rem; color: var(--muted); }
+.tl-dot.under { border-radius: 2px; }
+.rate-row .bar-label { width: 150px; font-size: .85rem; }
+.rate-row .bar-label small { display: block; font-weight: 500; color: var(--muted); }
+@media (max-width: 600px) {
+  .rate-row .bar-label { width: 110px; }
 }
