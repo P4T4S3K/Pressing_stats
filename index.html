@@ -87,10 +87,42 @@
   </section>
 
   <div class="toolbar">
+    <button id="combineBtn" class="ctrl primary">Send / add stats</button>
     <button id="undoBtn" class="ctrl">Undo my last</button>
     <button id="csvBtn" class="ctrl">Export CSV</button>
     <button id="resetBtn" class="ctrl danger">Reset match</button>
   </div>
+
+  <section id="combine" class="combine" hidden>
+    <h2>Combine both operators in one report</h2>
+    <div class="combine-grid">
+      <div class="combine-card" id="sendCard">
+        <h3>Send my stats</h3>
+        <p id="sendSummary"></p>
+        <div class="combine-actions">
+          <button id="shareBtn" class="ctrl primary">Share link</button>
+          <button id="copyBtn" class="ctrl">Copy link</button>
+          <button id="fileBtn" class="ctrl">Save as file</button>
+        </div>
+        <p class="hint">Send it via WhatsApp, SMS or e-mail to the phone with the report.
+          Opening the link there adds your stats to its report.</p>
+      </div>
+      <div class="combine-card">
+        <h3>Add stats from the other operator</h3>
+        <p class="hint">Open the link you received, or paste it here:</p>
+        <textarea id="pasteBox" rows="3" placeholder="Paste the link here"></textarea>
+        <div class="combine-actions">
+          <button id="pasteBtn" class="ctrl primary">Add to report</button>
+          <label class="ctrl" for="fileInput">Choose file…</label>
+          <input type="file" id="fileInput" accept=".json,application/json" hidden>
+        </div>
+        <p class="combine-msg" id="combineMsg"></p>
+      </div>
+    </div>
+    <p class="hint">Start the clock at kick-off on both phones so the times line up.
+      Sending again later (e.g. at full time) replaces that team's earlier stats, nothing is counted twice.</p>
+    <button id="closeCombineBtn" class="ctrl">Close</button>
+  </section>
 
   <section class="report">
     <h2>Report</h2>

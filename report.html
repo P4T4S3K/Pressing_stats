@@ -15,9 +15,9 @@
 <body>
 <p>Opening Report… <a id="go" href="index.html?r=view">Continue</a></p>
 <script>
-  // Report app: open the main app locked to this role, keeping a match code (?m=...) if given.
+  // Report app: open the main app locked to this role, keeping a match code (?m=...) or shared stats (#add=...).
   var q = location.search.replace(/^\?/, '');
-  location.replace('index.html?r=view' + (q ? '&' + q : ''));
+  location.replace('index.html?r=view' + (q ? '&' + q : '') + location.hash);
 </script>
 </body>
 </html>

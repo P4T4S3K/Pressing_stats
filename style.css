@@ -301,7 +301,7 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
 
 /* Report only: no recording controls. */
 .role-view .phases, .role-view .teams, .role-view #undoBtn,
-.role-view #resetBtn, .role-view #clockBtn { display: none; }
+.role-view #clockBtn, .role-view #sendCard { display: none; }
 
 .ctrl:disabled { opacity: .45; cursor: default; }
 [hidden] { display: none !important; }
@@ -310,3 +310,30 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
 .role-A .topbar { background: var(--team-a); }
 .role-B .topbar { background: var(--team-b); }
 .role-A .sync-pill, .role-B .sync-pill { box-shadow: 0 0 0 1px rgba(255, 255, 255, .6); }
+
+/* ---- Combine stats from both operators (no live sync) ---- */
+.ctrl.primary { background: var(--text); color: #fff; border-color: var(--text); font-weight: 600; }
+.role-A .ctrl.primary { background: var(--team-a); border-color: var(--team-a); }
+.role-B .ctrl.primary { background: var(--team-b); border-color: var(--team-b); }
+.combine {
+  background: var(--card);
+  border: 2px solid var(--text);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.combine h2 { margin-top: 0; font-size: 1.2rem; }
+.combine h3 { margin: 0 0 6px; font-size: 1rem; }
+.combine .hint { color: var(--muted); font-size: .85rem; }
+.combine-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.role-view .combine-grid { grid-template-columns: minmax(0, 1fr); }
+.combine-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.combine-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.combine-actions label.ctrl { display: inline-flex; align-items: center; }
+#pasteBox { width: 100%; font: inherit; font-size: .85rem; padding: 8px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+.combine-msg { font-weight: 600; margin: 4px 0 0; }
+.combine-msg.ok { color: var(--ok); }
+.combine-msg.err { color: var(--ko); }
+@media (max-width: 600px) {
+  .combine-grid { grid-template-columns: minmax(0, 1fr); }
+}

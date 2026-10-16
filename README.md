@@ -46,9 +46,23 @@ number of phases, average and longest phase, a pressing-time balance bar, a **ma
 Install each one on its phone as a separate app: open the link, then
 **Android/Chrome:** menu ⋮ → *Add to Home screen* / *Install app*;
 **iPhone/Safari:** Share → *Add to Home Screen*.
-Each app has its own name, colour and icon (1, 2, R) and remembers the last match code.
+Each app has its own name, colour and icon (1, 2, R).
 
-## Two operators with live sync
+## One report from both operators (no internet needed during the match)
+
+1. At kick-off, both operators tap **Start clock** at the same moment, so the times line up.
+2. Operator 1 records Team A, Operator 2 records Team B, each on their own phone.
+3. At half time or full time each operator taps **Send my stats → Share link** and sends the link
+   (WhatsApp, SMS, e-mail) to the phone that shows the report (the coach, or one of the operators).
+   Alternatively **Save as file** and send the file.
+4. On the report phone, open each link: the stats are added to the **Report**, which then shows both teams.
+   In an installed app you can also paste the link (or choose the file) under **Add stats**.
+
+Sending again later replaces that team's earlier stats, so nothing is counted twice.
+
+## Optional: live sync between operators
+
+Not needed for the steps above. With a free Firebase project the two phones can also share one live match.
 
 One operator records **Team A** (my team), the other records **Team B** (opponent), each on their own phone.
 Both see the same match clock and the same live report. A coach can follow along with a *Report only* link.
@@ -105,8 +119,8 @@ To host it online, enable **GitHub Pages** in the repository settings
 | File | Purpose |
 | --- | --- |
 | `index.html` | Page layout |
-| `config.js` | Firebase settings for live sync (`null` = this device only) |
-| `store.js` | Match data: this device only or live via Firebase |
+| `config.js` | Optional Firebase settings for live sync (`null` = off) |
+| `store.js` | Match data: on this device, or live via Firebase |
 | `vendor/qrcode.js` | QR code generator (MIT, Kazuhiko Arase) |
 | `style.css` | Team and button colours, layout |
-| `app.js` | Roles, recording logic, report, CSV export |
+| `app.js` | Roles, recording logic, report, sending / adding stats, CSV export |

@@ -76,6 +76,9 @@
       removePhase: function (id) { backend.remove('phases/' + id); },
       setName: function (k, v) { backend.set('names/' + k, v); },
       setClock: function (c) { backend.set('clock', c); },
+      newId: function (col) { return backend.newId(col); },
+      // Many changes in one write, keys are paths like "events/<id>" (null deletes).
+      bulk: function (fields) { backend.update('', fields); },
       reset: function () { backend.update('', { events: null, phases: null, clock: null }); }
     };
     backend.onData(function (raw) {

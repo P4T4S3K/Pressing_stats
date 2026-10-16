@@ -212,6 +212,7 @@
     });
 
     $('undoBtn').disabled = !ops.length;
+    if (!$('combine').hidden) renderSendSummary();
     renderTimeline(now);
     renderPeriods(now);
     renderLog();
@@ -308,8 +309,8 @@
     var pill = $('syncPill');
     var text, cls;
     if (store.mode === 'local') {
-      text = role === 'both' ? 'This device only' : ROLES[role] + ' · not synced (this phone only)';
-      cls = role === 'both' ? 'local' : 'offline';
+      text = role === 'both' ? 'This device only' : ROLES[role];
+      cls = 'local';
     } else if (status === 'online') {
       text = 'Live · ' + matchCode + ' · ' + ROLES[role];
       cls = 'online';
@@ -410,6 +411,184 @@
     store.reset();
     ops = [];
     saveOps();
+  }
+
+  // ---- Combine stats from both operators (without live sync) ----
+  // An operator sends their team's data as a link (report.html#add=<data>) or a file.
+  // Adding it on another device replaces that team's data there, so sending again never double-counts.
+
+  function myTeams() { return role === 'A' || role === 'B' ? [role] : ['A', 'B']; }
+
+  function toB64(str) {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function fromB64(b64) {
+    var s = b64.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return decodeURIComponent(escape(atob(s)));
+  }
+
+  // Compact payload; times in tenths of a second.
+  function buildPayload() {
+    var teams = myTeams();
+    var d = { v: 1, t: teams, n: {}, c: Math.round(clockNow() / 100), e: [], p: [] };
+    teams.forEach(function (k) { d.n[k] = S.names[k]; });
+    S.events.forEach(function (e) {
+      if (teams.indexOf(e.team) >= 0) d.e.push([e.team, e.result === 'ok' ? 1 : 0, Math.round(e.ms / 100)]);
+    });
+    S.phases.forEach(function (p) {
+      if (teams.indexOf(p.side) >= 0) {
+        d.p.push([p.side, Math.round(p.startMs / 100), p.endMs === null ? -1 : Math.round(p.endMs / 100)]);
+      }
+    });
+    return d;
+  }
+
+  function payloadLink(d) {
+    return location.origin + location.pathname.replace(/[^/]*$/, '') + 'report.html#add=' + toB64(JSON.stringify(d));
+  }
+
+  // Accepts a shared link, the bare code after "#add=", or the content of a saved file.
+  function parsePayload(text) {
+    text = (text || '').trim();
+    var d;
+    try {
+      if (text.charAt(0) === '{') {
+        d = JSON.parse(text);
+        if (d.pressingStats) d = d.pressingStats;
+      } else {
+        var i = text.indexOf('#add=');
+        d = JSON.parse(fromB64(i >= 0 ? text.slice(i + 5) : text));
+      }
+    } catch (e) {
+      return null;
+    }
+    var okTeam = function (k) { return k === 'A' || k === 'B'; };
+    if (!d || d.v !== 1 || !Array.isArray(d.t) || !d.t.length || !d.t.every(okTeam) ||
+        !Array.isArray(d.e) || !Array.isArray(d.p)) return null;
+    return d;
+  }
+
+  function teamsLabel(d) {
+    return d.t.map(function (k) { return (d.n && d.n[k]) || S.names[k]; }).join(' + ');
+  }
+
+  // Returns a message for the user, or null if they cancelled.
+  function addPayload(d) {
+    var summary = teamsLabel(d) + ': ' + d.e.length + ' pressing actions, ' + d.p.length +
+      ' pressing phases, clock ' + fmtClock((d.c || 0) * 100);
+    if (!confirm('Add stats to this report?\n\n' + summary +
+        '\n\nEarlier stats of ' + teamsLabel(d) + ' on this device will be replaced.')) return null;
+
+    var fields = {};
+    d.t.forEach(function (k) {
+      S.events.forEach(function (e) { if (e.team === k) fields['events/' + e.id] = null; });
+      S.phases.forEach(function (p) { if (p.side === k) fields['phases/' + p.id] = null; });
+      if (d.n && d.n[k]) fields['names/' + k] = String(d.n[k]).slice(0, 60);
+    });
+    d.e.forEach(function (x) {
+      if (d.t.indexOf(x[0]) < 0) return;
+      fields['events/' + store.newId('events')] = { team: x[0], result: x[1] ? 'ok' : 'ko', ms: (+x[2] || 0) * 100, at: '' };
+    });
+    d.p.forEach(function (x) {
+      if (d.t.indexOf(x[0]) < 0) return;
+      var p = { side: x[0], startMs: (+x[1] || 0) * 100 };
+      if (x[2] >= 0) p.endMs = x[2] * 100;
+      fields['phases/' + store.newId('phases')] = p;
+    });
+    store.bulk(fields);
+
+    // Show the report up to the latest time received.
+    var c = (d.c || 0) * 100;
+    if (!S.clock.running && c > S.clock.clockMs) store.setClock({ running: false, clockMs: c, startedAt: null });
+    return 'Added ' + summary + '.';
+  }
+
+  function showCombineMsg(text, ok) {
+    $('combineMsg').textContent = text;
+    $('combineMsg').className = 'combine-msg ' + (ok ? 'ok' : 'err');
+  }
+
+  function renderSendSummary() {
+    var d = buildPayload();
+    $('sendSummary').textContent = teamsLabel(d) + ': ' + d.e.length + ' pressing actions, ' +
+      d.p.length + ' pressing phases, clock ' + fmtClock(d.c * 100) + '.';
+  }
+
+  function openCombine() {
+    renderSendSummary();
+    $('combine').hidden = false;
+    $('combine').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function flash(btn, text) {
+    var old = btn.textContent;
+    btn.textContent = text;
+    setTimeout(function () { btn.textContent = old; }, 1500);
+  }
+
+  function copyText(text, btn) {
+    var fallback = function () {
+      $('pasteBox').value = text;
+      $('pasteBox').select();
+      flash(btn, 'Select & copy the text');
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { flash(btn, 'Copied!'); }, fallback);
+    else fallback();
+  }
+
+  function shareLink() {
+    var d = buildPayload();
+    var url = payloadLink(d);
+    var title = 'Pressing stats – ' + (role === 'both' ? 'both teams' : ROLES[role]);
+    if (navigator.share) {
+      navigator.share({ title: title, text: title + ' (' + teamsLabel(d) + '). Open to add to the report:', url: url })
+        .catch(function () { /* cancelled */ });
+    } else {
+      copyText(url, $('shareBtn'));
+    }
+  }
+
+  function saveFile() {
+    var d = buildPayload();
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ pressingStats: d })], { type: 'application/json' }));
+    a.download = 'pressing-' + teamsLabel(d).replace(/[^A-Za-z0-9]+/g, '-') + '-' +
+      new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function addFromText(text) {
+    var d = parsePayload(text);
+    if (!d) {
+      showCombineMsg('This is not a valid stats link or file.', false);
+      return;
+    }
+    var msg = addPayload(d);
+    if (msg) {
+      showCombineMsg(msg, true);
+      $('pasteBox').value = '';
+    }
+  }
+
+  // A shared link was opened: report.html#add=...
+  function addFromHash() {
+    if (location.hash.indexOf('#add=') !== 0) return;
+    var text = location.hash;
+    history.replaceState(null, '', location.pathname + location.search);
+    var d = parsePayload(text);
+    if (!d) {
+      alert('This stats link is damaged or incomplete. Ask the operator to send it again.');
+      return;
+    }
+    var msg = addPayload(d);
+    if (msg) {
+      $('combine').hidden = false;
+      showCombineMsg(msg + ' Open the other operator\'s link too to complete the report.', true);
+    }
   }
 
   // ---- Match setup (live sync) ----
@@ -513,6 +692,18 @@
     $('undoBtn').addEventListener('click', undo);
     $('csvBtn').addEventListener('click', exportCsv);
     $('resetBtn').addEventListener('click', resetMatch);
+    $('combineBtn').addEventListener('click', openCombine);
+    $('closeCombineBtn').addEventListener('click', function () { $('combine').hidden = true; });
+    $('shareBtn').addEventListener('click', shareLink);
+    $('copyBtn').addEventListener('click', function () { copyText(payloadLink(buildPayload()), $('copyBtn')); });
+    $('fileBtn').addEventListener('click', saveFile);
+    $('pasteBtn').addEventListener('click', function () { addFromText($('pasteBox').value); });
+    $('fileInput').addEventListener('change', function (ev) {
+      var f = ev.target.files[0];
+      if (!f) return;
+      f.text().then(addFromText);
+      ev.target.value = '';
+    });
     $('matchBtn').addEventListener('click', function () { showSetup(!!store); });
     $('closeSetupBtn').addEventListener('click', hideSetup);
     $('newCodeBtn').addEventListener('click', function () { $('matchCode').value = randomCode(); });
@@ -529,6 +720,7 @@
     store.onStatus(renderSync);
     renderSync(store.status);
     render();
+    addFromHash();
     setInterval(function () {
       tickCount++;
       // Live counters every tick; the whole report every 5 s while the clock runs.
@@ -550,6 +742,8 @@
   function init() {
     document.body.className = 'role-' + role;
     applyAppIdentity();
+    if (role === 'A' || role === 'B') $('combineBtn').textContent = 'Send my stats';
+    if (role === 'view') $('combineBtn').textContent = 'Add stats';
     bindUi();
     $('matchBtn').hidden = !syncAvailable;
     $('localLink').hidden = !syncAvailable;

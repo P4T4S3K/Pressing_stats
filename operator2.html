@@ -15,9 +15,9 @@
 <body>
 <p>Opening Operator 2 · Team B… <a id="go" href="index.html?r=B">Continue</a></p>
 <script>
-  // Operator 2 · Team B app: open the main app locked to this role, keeping a match code (?m=...) if given.
+  // Operator 2 · Team B app: open the main app locked to this role, keeping a match code (?m=...) or shared stats (#add=...).
   var q = location.search.replace(/^\?/, '');
-  location.replace('index.html?r=B' + (q ? '&' + q : ''));
+  location.replace('index.html?r=B' + (q ? '&' + q : '') + location.hash);
 </script>
 </body>
 </html>
