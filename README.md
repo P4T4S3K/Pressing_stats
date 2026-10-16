@@ -4,19 +4,20 @@ A lightweight web app for recording **pressing actions** of two teams during a f
 
 ## How it works
 
-### Pressing phases – who is pressing now?
+### Pressing phases – "We press" and "Under pressure"
 
-At the top there are two big toggle buttons:
+Each team has two phase buttons:
 
-- 🔵 **We press** – *my team* (Team A) is pressing.
-- 🟠 **Under pressure** – the *opponent* (Team B) is pressing us.
+- **We press**: the team is pressing.
+- **Under pressure**: the team is being pressed.
 
-Tap a button when a pressing phase starts and tap it again when it ends. Tapping the other button
-switches directly. The match clock starts automatically with the first phase.
+Tap a button when the phase starts and tap it again when it ends. Tapping the other button switches
+directly. Operator 1 records Team A's phases, Operator 2 records Team B's phases. The match clock starts
+automatically with the first phase.
 
-The report shows for both sides: total pressing time, share of match time, share of pressing time,
-number of phases, average and longest phase, a pressing-time balance bar, a **match timeline**
-(phases as bars, pressing actions as dots) and pressing time per 15-minute period.
+The report shows for both teams: time pressing, time under pressure, their ratio, share of match time,
+number of phases, average and longest phase, a *we press vs. under pressure* bar, a **match timeline**
+(solid bars = we press, striped = under pressure, dots = pressing actions) and times per 15-minute period.
 
 ### Pressing actions
 
@@ -38,8 +39,8 @@ number of phases, average and longest phase, a pressing-time balance bar, a **ma
 
 | App | Link | Records |
 | --- | --- | --- |
-| **Operator 1** (blue) | <https://p4t4s3k.github.io/Pressing_stats/operator1.html> | Team A (my team): *We press* + Successful / Unsuccessful |
-| **Operator 2** (orange) | <https://p4t4s3k.github.io/Pressing_stats/operator2.html> | Team B (opponent): *Under pressure* + Successful / Unsuccessful |
+| **Operator 1** (blue) | <https://p4t4s3k.github.io/Pressing_stats/operator1.html> | Team A (my team): *We press* / *Under pressure* + Successful / Unsuccessful |
+| **Operator 2** (orange) | <https://p4t4s3k.github.io/Pressing_stats/operator2.html> | Team B (opponent): *We press* / *Under pressure* + Successful / Unsuccessful |
 | **Report** | <https://p4t4s3k.github.io/Pressing_stats/report.html> | nothing, live report for the coach |
 | Both teams | <https://p4t4s3k.github.io/Pressing_stats/> | everything on one device |
 
@@ -69,8 +70,8 @@ Both see the same match clock and the same live report. A coach can follow along
 
 1. Open the app and pick a **match code** (or keep the generated one).
 2. Choose a role:
-   - **Operator Team A**: only Team A's buttons, "We press" phase button
-   - **Operator Team B**: only Team B's buttons, "Under pressure" phase button
+   - **Operator Team A**: only Team A's buttons
+   - **Operator Team B**: only Team B's buttons
    - **Report only**: live report without buttons (coach / bench)
    - **Both teams**: one device records everything
 3. Tap **Match** (top right) to show links and QR codes for the other devices. Scan to join the same match.

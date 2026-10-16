@@ -52,27 +52,23 @@
 </section>
 
 <main id="main">
-  <section class="phases">
-    <h2 class="section-title">Who is pressing now?</h2>
-    <div class="phase-buttons">
-      <button class="phase phase-a" id="phaseA" data-side="A">
-        <span class="phase-title">We press</span>
-        <span class="phase-sub" id="phaseSubA">Team A pressing</span>
-        <span class="phase-time" id="phaseTimeA">00:00</span>
-      </button>
-      <button class="phase phase-b" id="phaseB" data-side="B">
-        <span class="phase-title">Under pressure</span>
-        <span class="phase-sub" id="phaseSubB">Team B pressing</span>
-        <span class="phase-time" id="phaseTimeB">00:00</span>
-      </button>
-    </div>
-    <p class="phase-status" id="phaseStatus"></p>
-  </section>
-
   <section class="teams">
     <div class="team team-a" data-team="A">
       <div class="team-role">My team</div>
       <input class="team-name" id="nameA" value="Team A" aria-label="My team name">
+      <div class="section-label">Phases</div>
+      <div class="phase-row">
+        <button class="phase phase-press" id="pressA" data-team="A" data-kind="press">
+          <span class="phase-title">We press</span>
+          <span class="phase-time" id="pressTimeA">00:00</span>
+        </button>
+        <button class="phase phase-under" id="underA" data-team="A" data-kind="under">
+          <span class="phase-title">Under pressure</span>
+          <span class="phase-time" id="underTimeA">00:00</span>
+        </button>
+      </div>
+      <p class="phase-status" id="statusA"></p>
+      <div class="section-label">Pressing actions</div>
       <div class="counts"><span class="ok" id="countA-ok">0</span> / <span class="ko" id="countA-ko">0</span></div>
       <button class="press press-ok" data-team="A" data-result="ok">Successful</button>
       <button class="press press-ko" data-team="A" data-result="ko">Unsuccessful</button>
@@ -80,6 +76,19 @@
     <div class="team team-b" data-team="B">
       <div class="team-role">Opponent</div>
       <input class="team-name" id="nameB" value="Team B" aria-label="Opponent name">
+      <div class="section-label">Phases</div>
+      <div class="phase-row">
+        <button class="phase phase-press" id="pressB" data-team="B" data-kind="press">
+          <span class="phase-title">We press</span>
+          <span class="phase-time" id="pressTimeB">00:00</span>
+        </button>
+        <button class="phase phase-under" id="underB" data-team="B" data-kind="under">
+          <span class="phase-title">Under pressure</span>
+          <span class="phase-time" id="underTimeB">00:00</span>
+        </button>
+      </div>
+      <p class="phase-status" id="statusB"></p>
+      <div class="section-label">Pressing actions</div>
       <div class="counts"><span class="ok" id="countB-ok">0</span> / <span class="ko" id="countB-ko">0</span></div>
       <button class="press press-ok" data-team="B" data-result="ok">Successful</button>
       <button class="press press-ko" data-team="B" data-result="ko">Unsuccessful</button>
@@ -138,20 +147,25 @@
         <tr><td>Success rate</td><td id="rateA">–</td><td id="rateB">–</td></tr>
         <tr><td>Share of all pressing actions</td><td id="shareA">–</td><td id="shareB">–</td></tr>
         <tr class="group"><td colspan="3">Pressing phases</td></tr>
-        <tr><td>Time pressing</td><td id="ptimeA">00:00</td><td id="ptimeB">00:00</td></tr>
-        <tr><td>Share of match time</td><td id="pmatchA">–</td><td id="pmatchB">–</td></tr>
-        <tr><td>Share of pressing time</td><td id="pshareA">–</td><td id="pshareB">–</td></tr>
-        <tr><td>Number of phases</td><td id="pcountA">0</td><td id="pcountB">0</td></tr>
-        <tr><td>Average phase length</td><td id="pavgA">–</td><td id="pavgB">–</td></tr>
-        <tr><td>Longest phase</td><td id="pmaxA">–</td><td id="pmaxB">–</td></tr>
+        <tr><td>Time pressing (we press)</td><td id="ptimeA">00:00</td><td id="ptimeB">00:00</td></tr>
+        <tr><td>Time under pressure</td><td id="utimeA">00:00</td><td id="utimeB">00:00</td></tr>
+        <tr><td>Pressing vs. under pressure</td><td id="pshareA">–</td><td id="pshareB">–</td></tr>
+        <tr><td>Share of match time pressing</td><td id="pmatchA">–</td><td id="pmatchB">–</td></tr>
+        <tr><td>Share of match time under pressure</td><td id="umatchA">–</td><td id="umatchB">–</td></tr>
+        <tr><td>Pressing phases</td><td id="pcountA">0</td><td id="pcountB">0</td></tr>
+        <tr><td>Under-pressure phases</td><td id="ucountA">0</td><td id="ucountB">0</td></tr>
+        <tr><td>Average pressing phase</td><td id="pavgA">–</td><td id="pavgB">–</td></tr>
+        <tr><td>Longest pressing phase</td><td id="pmaxA">–</td><td id="pmaxB">–</td></tr>
+        <tr><td>Longest under pressure</td><td id="umaxA">–</td><td id="umaxB">–</td></tr>
       </tbody>
     </table>
 
-    <h3>Pressing time balance</h3>
-    <div class="balance">
-      <div class="bal-a" id="balA"></div><div class="bal-b" id="balB"></div>
+    <h3>We press vs. under pressure</h3>
+    <div class="bars">
+      <div class="bar-row"><span class="bar-label" id="balLabelA">Team A</span><div class="bar"><div class="bal-press" id="balPressA"></div><div class="bal-under" id="balUnderA"></div></div></div>
+      <div class="bar-row"><span class="bar-label" id="balLabelB">Team B</span><div class="bar"><div class="bal-press" id="balPressB"></div><div class="bal-under" id="balUnderB"></div></div></div>
+      <div class="legend"><span class="sw sw-a"></span><span class="sw sw-b"></span>We press <span class="sw sw-under"></span>Under pressure</div>
     </div>
-    <div class="legend"><span class="sw sw-a"></span><span id="legA">Team A</span> pressing (we press) <span class="sw sw-b"></span><span id="legB">Team B</span> pressing (we are under pressure)</div>
 
     <h3>Match timeline</h3>
     <div class="timeline-wrap">
@@ -161,7 +175,7 @@
       <div class="timeline-axis" id="timelineAxis"></div>
     </div>
     <div class="legend">
-      Bars: pressing phases · Dots: pressing actions:
+      Solid bars: we press · Striped bars: under pressure · Dots: pressing actions:
       <span class="sw sw-ok"></span>successful <span class="sw sw-ko"></span>unsuccessful
     </div>
 
@@ -176,8 +190,8 @@
     <div class="table-scroll">
       <table class="stats" id="periodTable">
         <thead>
-          <tr><th rowspan="2">Period</th><th colspan="2" class="th-a" id="perHeadA">Team A</th><th colspan="2" class="th-b" id="perHeadB">Team B</th></tr>
-          <tr><th class="th-a sub">Actions (succ.)</th><th class="th-a sub">Pressing time</th><th class="th-b sub">Actions (succ.)</th><th class="th-b sub">Pressing time</th></tr>
+          <tr><th rowspan="2">Period</th><th colspan="3" class="th-a" id="perHeadA">Team A</th><th colspan="3" class="th-b" id="perHeadB">Team B</th></tr>
+          <tr><th class="th-a sub">Actions (succ.)</th><th class="th-a sub">We press</th><th class="th-a sub">Under pressure</th><th class="th-b sub">Actions (succ.)</th><th class="th-b sub">We press</th><th class="th-b sub">Under pressure</th></tr>
         </thead>
         <tbody></tbody>
       </table>

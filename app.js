@@ -83,32 +83,35 @@
     return t;
   }
 
-  function mySides() { return role === 'A' || role === 'B' ? [role] : role === 'both' ? ['A', 'B'] : []; }
-
   // ---- Pressing phases ----
+  // Each team has two phase kinds: 'press' (we press) and 'under' (we are under pressure).
+  // A team has at most one running phase; each operator records only their own team's phases.
 
-  function openPhase(side) {
+  var KINDS = ['press', 'under'];
+  var KIND_LABEL = { press: 'we press', under: 'under pressure' };
+
+  function openPhase(team) {
     for (var i = S.phases.length - 1; i >= 0; i--) {
-      if (S.phases[i].side === side && S.phases[i].endMs === null) return S.phases[i];
+      if (S.phases[i].team === team && S.phases[i].endMs === null) return S.phases[i];
     }
     return null;
   }
 
   function phaseEnd(p, now) { return p.endMs === null ? Math.max(now, p.startMs) : p.endMs; }
 
-  // Pressing time per side, optionally limited to the window [from, to).
+  // Time per team and kind, optionally limited to the window [from, to).
   function phaseTime(now, from, to) {
-    var r = { A: 0, B: 0 };
+    var r = { A: { press: 0, under: 0 }, B: { press: 0, under: 0 } };
     S.phases.forEach(function (p) {
       var s = p.startMs, e = phaseEnd(p, now);
       if (from !== undefined) { s = Math.max(s, from); e = Math.min(e, to); }
-      if (e > s) r[p.side] += e - s;
+      if (e > s) r[p.team][p.kind] += e - s;
     });
     return r;
   }
 
-  function phaseStats(side, now) {
-    var list = S.phases.filter(function (p) { return p.side === side; });
+  function phaseStats(team, kind, now) {
+    var list = S.phases.filter(function (p) { return p.team === team && p.kind === kind; });
     var total = 0, max = 0;
     list.forEach(function (p) {
       var d = phaseEnd(p, now) - p.startMs;
@@ -118,21 +121,18 @@
     return { count: list.length, total: total, max: max, avg: list.length ? total / list.length : 0 };
   }
 
-  function togglePhase(side) {
+  // Tap on "We press" / "Under pressure": starts that phase, ends it when tapped again,
+  // and switches directly when the team's other phase is running.
+  function togglePhase(team, kind) {
     var now = S.clock.running ? clockNow() : startClock();
     var op = [];
-    var open = openPhase(side);
+    var open = openPhase(team);
     if (open) {
       store.updatePhase(open.id, { endMs: now });
       op.push({ t: 'end', id: open.id });
-    } else {
-      // One device recording both sides: starting one side's phase ends the other's.
-      var other = role === 'both' ? openPhase(side === 'A' ? 'B' : 'A') : null;
-      if (other) {
-        store.updatePhase(other.id, { endMs: now });
-        op.push({ t: 'end', id: other.id });
-      }
-      op.push({ t: 'start', id: store.addPhase({ side: side, startMs: now }) });
+    }
+    if (!open || open.kind !== kind) {
+      op.push({ t: 'start', id: store.addPhase({ team: team, kind: kind, startMs: now }) });
     }
     ops.push(op);
     saveOps();
@@ -148,26 +148,18 @@
     $('clockBtn').textContent = S.clock.running ? 'Pause clock' : (S.clock.clockMs ? 'Resume clock' : 'Start clock');
 
     var tot = phaseTime(now);
-    var openA = openPhase('A'), openB = openPhase('B');
-    [['A', openA], ['B', openB]].forEach(function (x) {
-      var k = x[0], open = x[1];
-      $('phase' + k).classList.toggle('active', !!open);
-      $('phaseTime' + k).textContent = open ? fmtClock(now - open.startMs) : fmtClock(tot[k]);
+    ['A', 'B'].forEach(function (k) {
+      var open = openPhase(k);
+      KINDS.forEach(function (kind) {
+        var active = !!open && open.kind === kind;
+        $(kind + k).classList.toggle('active', active);
+        $(kind + 'Time' + k).textContent = active ? fmtClock(now - open.startMs) : fmtClock(tot[k][kind]);
+      });
+      $('status' + k).textContent = open ?
+        (open.kind === 'press' ? 'Pressing' : 'Under pressure') + ' since ' + fmtClock(open.startMs) +
+          (S.clock.running ? '' : ' (clock paused)') + '. Tap again to end.' :
+        'Tap when a phase starts, tap again when it ends.';
     });
-
-    var parts = [];
-    if (openA) parts.push('We are pressing since ' + fmtClock(openA.startMs));
-    if (openB) parts.push('We are under pressure since ' + fmtClock(openB.startMs));
-    var status = parts.length ? parts.join(' · ') + (S.clock.running ? '' : ' (clock paused)') :
-      'No pressing phase running.';
-    var mine = mySides();
-    if (mine.length === 1) {
-      status += mine[0] === 'A' ? ' Tap "We press" when ' : ' Tap "Under pressure" when ';
-      status += S.names[mine[0]] + ' starts pressing, tap again when it ends.';
-    } else if (!parts.length) {
-      status += ' Tap a button when a pressing phase starts, tap it again when it ends.';
-    }
-    $('phaseStatus').textContent = status;
   }
 
   function render() {
@@ -175,14 +167,12 @@
     var t = tally(S.events);
     var all = t.A.ok + t.A.ko + t.B.ok + t.B.ko;
     var ptime = phaseTime(now);
-    var pall = ptime.A + ptime.B;
 
     ['A', 'B'].forEach(function (k) {
       var name = S.names[k];
       var tot = t[k].ok + t[k].ko;
       if (document.activeElement !== $('name' + k)) $('name' + k).value = name;
-      ['head', 'perHead', 'barLabel', 'leg', 'tlName'].forEach(function (p) { $(p + k).textContent = name; });
-      $('phaseSub' + k).textContent = name + ' pressing';
+      ['head', 'perHead', 'barLabel', 'balLabel', 'tlName'].forEach(function (p) { $(p + k).textContent = name; });
       $('count' + k + '-ok').textContent = t[k].ok;
       $('count' + k + '-ko').textContent = t[k].ko;
       $('tot' + k).textContent = tot;
@@ -191,13 +181,19 @@
       $('rate' + k).textContent = pct(t[k].ok, tot);
       $('share' + k).textContent = pct(tot, all);
 
-      var ps = phaseStats(k, now);
+      var ps = phaseStats(k, 'press', now);
+      var us = phaseStats(k, 'under', now);
       $('ptime' + k).textContent = fmtClock(ps.total);
+      $('utime' + k).textContent = fmtClock(us.total);
+      $('pshare' + k).textContent = ps.total + us.total ?
+        pct(ps.total, ps.total + us.total) + ' / ' + pct(us.total, ps.total + us.total) : '–';
       $('pmatch' + k).textContent = pct(ps.total, now);
-      $('pshare' + k).textContent = pct(ps.total, pall);
+      $('umatch' + k).textContent = pct(us.total, now);
       $('pcount' + k).textContent = ps.count;
+      $('ucount' + k).textContent = us.count;
       $('pavg' + k).textContent = ps.count ? fmtClock(ps.avg) : '–';
       $('pmax' + k).textContent = ps.count ? fmtClock(ps.max) : '–';
+      $('umax' + k).textContent = us.count ? fmtClock(us.max) : '–';
 
       var okW = tot ? (t[k].ok / tot) * 100 : 0;
       var koW = tot ? 100 - okW : 0;
@@ -206,9 +202,13 @@
       $('barOk' + k).textContent = okW >= 12 ? Math.round(okW) + '%' : '';
       $('barKo' + k).textContent = koW >= 12 ? Math.round(koW) + '%' : '';
 
-      var bw = pall ? (ptime[k] / pall) * 100 : 0;
-      $('bal' + k).style.width = bw + '%';
-      $('bal' + k).textContent = bw >= 12 ? Math.round(bw) + '% · ' + fmtClock(ptime[k]) : '';
+      var pu = ptime[k].press + ptime[k].under;
+      var pw = pu ? (ptime[k].press / pu) * 100 : 0;
+      var uw = pu ? 100 - pw : 0;
+      $('balPress' + k).style.width = pw + '%';
+      $('balUnder' + k).style.width = uw + '%';
+      $('balPress' + k).textContent = pw >= 12 ? Math.round(pw) + '%' : '';
+      $('balUnder' + k).textContent = uw >= 12 ? Math.round(uw) + '%' : '';
     });
 
     $('undoBtn').disabled = !ops.length;
@@ -229,9 +229,9 @@
     var html = '';
     S.phases.forEach(function (p) {
       var e = phaseEnd(p, now);
-      html += '<div class="tl-seg ' + p.side.toLowerCase() + (p.endMs === null ? ' live' : '') +
+      html += '<div class="tl-seg ' + p.team.toLowerCase() + ' ' + p.kind + (p.endMs === null ? ' live' : '') +
         '" style="left:' + x(p.startMs) + ';width:' + Math.max(0.3, ((e - p.startMs) / span) * 100) + '%" title="' +
-        esc(S.names[p.side]) + ' pressing ' + fmtClock(p.startMs) + '–' + fmtClock(e) + '"></div>';
+        esc(S.names[p.team]) + ': ' + KIND_LABEL[p.kind] + ' ' + fmtClock(p.startMs) + '–' + fmtClock(e) + '"></div>';
     });
     S.events.forEach(function (ev) {
       html += '<div class="tl-dot ' + ev.team.toLowerCase() + ' ' + ev.result + '" style="left:' + x(ev.ms) +
@@ -252,7 +252,7 @@
   function renderPeriods(now) {
     var body = document.querySelector('#periodTable tbody');
     if (!S.events.length && !S.phases.length) {
-      body.innerHTML = '<tr><td colspan="5" class="empty">Nothing recorded yet.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="empty">Nothing recorded yet.</td></tr>';
       return;
     }
     var lastMs = 0;
@@ -270,7 +270,8 @@
       var cell = function (k) {
         var tot = t[k].ok + t[k].ko;
         return '<td>' + (tot ? t[k].ok + ' / ' + tot + ' (' + pct(t[k].ok, tot) + ')' : '–') + '</td>' +
-          '<td>' + (pt[k] ? fmtClock(pt[k]) : '–') + '</td>';
+          '<td>' + (pt[k].press ? fmtClock(pt[k].press) : '–') + '</td>' +
+          '<td>' + (pt[k].under ? fmtClock(pt[k].under) : '–') + '</td>';
       };
       html += '<tr><td>' + (i * PERIOD_MIN) + '–' + ((i + 1) * PERIOD_MIN) + "'</td>" + cell('A') + cell('B') + '</tr>';
     }
@@ -284,11 +285,10 @@
         '</span>: <span class="res-' + e.result + '">' + (e.result === 'ok' ? 'Successful' : 'Unsuccessful') + '</span> press' });
     });
     S.phases.forEach(function (p) {
-      var who = '<span class="tag tag-' + p.side.toLowerCase() + '">' + esc(S.names[p.side]) + '</span>';
-      var what = p.side === 'A' ? 'we press' : 'we are under pressure';
-      items.push({ ms: p.startMs, html: '<span class="phase-ev">▶ ' + who + ' pressing phase starts (' + what + ')</span>' });
+      var who = '<span class="tag tag-' + p.team.toLowerCase() + '">' + esc(S.names[p.team]) + '</span>';
+      items.push({ ms: p.startMs, html: '<span class="phase-ev">▶ ' + who + ': ' + KIND_LABEL[p.kind] + ' starts</span>' });
       if (p.endMs !== null) {
-        items.push({ ms: p.endMs, html: '<span class="phase-ev">■ ' + who + ' pressing phase ends after ' +
+        items.push({ ms: p.endMs, html: '<span class="phase-ev">■ ' + who + ': ' + KIND_LABEL[p.kind] + ' ends after ' +
           fmtClock(p.endMs - p.startMs) + '</span>' });
       }
     });
@@ -379,18 +379,20 @@
       rows.push([i + 1, fmtClock(e.ms), S.names[e.team], e.result === 'ok' ? 'Successful' : 'Unsuccessful', e.at]);
     });
     rows.push([]);
-    rows.push(['phase', 'pressing_team', 'situation', 'start', 'end', 'duration']);
+    rows.push(['phase', 'team', 'situation', 'start', 'end', 'duration']);
     S.phases.forEach(function (p, i) {
       var e = phaseEnd(p, now);
-      rows.push([i + 1, S.names[p.side], p.side === 'A' ? 'We press' : 'Under pressure',
+      rows.push([i + 1, S.names[p.team], p.kind === 'press' ? 'We press' : 'Under pressure',
         fmtClock(p.startMs), p.endMs === null ? 'running' : fmtClock(p.endMs), fmtClock(e - p.startMs)]);
     });
     var t = tally(S.events);
     rows.push([]);
-    rows.push(['summary', 'team', 'successful', 'unsuccessful', 'success_rate', 'pressing_time', 'phases']);
+    rows.push(['summary', 'team', 'successful', 'unsuccessful', 'success_rate',
+      'time_we_press', 'pressing_phases', 'time_under_pressure', 'under_pressure_phases']);
     ['A', 'B'].forEach(function (k) {
-      var ps = phaseStats(k, now);
-      rows.push(['', S.names[k], t[k].ok, t[k].ko, pct(t[k].ok, t[k].ok + t[k].ko), fmtClock(ps.total), ps.count]);
+      var ps = phaseStats(k, 'press', now), us = phaseStats(k, 'under', now);
+      rows.push(['', S.names[k], t[k].ok, t[k].ko, pct(t[k].ok, t[k].ok + t[k].ko),
+        fmtClock(ps.total), ps.count, fmtClock(us.total), us.count]);
     });
     var csv = rows.map(function (r) {
       return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
@@ -432,14 +434,15 @@
   // Compact payload; times in tenths of a second.
   function buildPayload() {
     var teams = myTeams();
-    var d = { v: 1, t: teams, n: {}, c: Math.round(clockNow() / 100), e: [], p: [] };
+    var d = { v: 2, t: teams, n: {}, c: Math.round(clockNow() / 100), e: [], p: [] };
     teams.forEach(function (k) { d.n[k] = S.names[k]; });
     S.events.forEach(function (e) {
       if (teams.indexOf(e.team) >= 0) d.e.push([e.team, e.result === 'ok' ? 1 : 0, Math.round(e.ms / 100)]);
     });
     S.phases.forEach(function (p) {
-      if (teams.indexOf(p.side) >= 0) {
-        d.p.push([p.side, Math.round(p.startMs / 100), p.endMs === null ? -1 : Math.round(p.endMs / 100)]);
+      if (teams.indexOf(p.team) >= 0) {
+        d.p.push([p.team, p.kind === 'press' ? 1 : 0, Math.round(p.startMs / 100),
+          p.endMs === null ? -1 : Math.round(p.endMs / 100)]);
       }
     });
     return d;
@@ -465,8 +468,10 @@
       return null;
     }
     var okTeam = function (k) { return k === 'A' || k === 'B'; };
-    if (!d || d.v !== 1 || !Array.isArray(d.t) || !d.t.length || !d.t.every(okTeam) ||
+    if (!d || (d.v !== 1 && d.v !== 2) || !Array.isArray(d.t) || !d.t.length || !d.t.every(okTeam) ||
         !Array.isArray(d.e) || !Array.isArray(d.p)) return null;
+    // Version 1 links only had pressing phases: [team, start, end].
+    if (d.v === 1) d.p = d.p.map(function (x) { return [x[0], 1, x[1], x[2]]; });
     return d;
   }
 
@@ -477,14 +482,14 @@
   // Returns a message for the user, or null if they cancelled.
   function addPayload(d) {
     var summary = teamsLabel(d) + ': ' + d.e.length + ' pressing actions, ' + d.p.length +
-      ' pressing phases, clock ' + fmtClock((d.c || 0) * 100);
+      ' phases, clock ' + fmtClock((d.c || 0) * 100);
     if (!confirm('Add stats to this report?\n\n' + summary +
         '\n\nEarlier stats of ' + teamsLabel(d) + ' on this device will be replaced.')) return null;
 
     var fields = {};
     d.t.forEach(function (k) {
       S.events.forEach(function (e) { if (e.team === k) fields['events/' + e.id] = null; });
-      S.phases.forEach(function (p) { if (p.side === k) fields['phases/' + p.id] = null; });
+      S.phases.forEach(function (p) { if (p.team === k) fields['phases/' + p.id] = null; });
       if (d.n && d.n[k]) fields['names/' + k] = String(d.n[k]).slice(0, 60);
     });
     d.e.forEach(function (x) {
@@ -493,8 +498,8 @@
     });
     d.p.forEach(function (x) {
       if (d.t.indexOf(x[0]) < 0) return;
-      var p = { side: x[0], startMs: (+x[1] || 0) * 100 };
-      if (x[2] >= 0) p.endMs = x[2] * 100;
+      var p = { team: x[0], kind: x[1] ? 'press' : 'under', startMs: (+x[2] || 0) * 100 };
+      if (x[3] >= 0) p.endMs = x[3] * 100;
       fields['phases/' + store.newId('phases')] = p;
     });
     store.bulk(fields);
@@ -513,7 +518,7 @@
   function renderSendSummary() {
     var d = buildPayload();
     $('sendSummary').textContent = teamsLabel(d) + ': ' + d.e.length + ' pressing actions, ' +
-      d.p.length + ' pressing phases, clock ' + fmtClock(d.c * 100) + '.';
+      d.p.length + ' phases (we press / under pressure), clock ' + fmtClock(d.c * 100) + '.';
   }
 
   function openCombine() {
@@ -681,7 +686,7 @@
       btn.addEventListener('click', function () { record(btn.dataset.team, btn.dataset.result, btn); });
     });
     document.querySelectorAll('.phase').forEach(function (btn) {
-      btn.addEventListener('click', function () { togglePhase(btn.dataset.side); });
+      btn.addEventListener('click', function () { togglePhase(btn.dataset.team, btn.dataset.kind); });
     });
     ['A', 'B'].forEach(function (k) {
       $('name' + k).addEventListener('change', function (ev) {

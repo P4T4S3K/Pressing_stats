@@ -3,7 +3,8 @@
 //   names:  { A, B }
 //   clock:  { running, clockMs, startedAt }   startedAt is in (server) wall-clock ms
 //   events: { id: { team, result, ms, at } }  pressing actions
-//   phases: { id: { side, startMs, endMs } }  pressing phases, endMs missing while running
+//   phases: { id: { team, kind, startMs, endMs } }  kind 'press' = team presses, 'under' = team is under pressure;
+//                                                    endMs missing while running
 (function () {
   'use strict';
 
@@ -50,8 +51,16 @@
     var phases = raw.phases || {};
     Object.keys(phases).forEach(function (id) {
       var p = phases[id];
-      if (!p || (p.side !== 'A' && p.side !== 'B')) return;
-      s.phases.push({ id: id, side: p.side, startMs: p.startMs || 0, endMs: typeof p.endMs === 'number' ? p.endMs : null });
+      // Older data stored { side } = the team that was pressing.
+      var team = p && (p.team || p.side);
+      if (team !== 'A' && team !== 'B') return;
+      s.phases.push({
+        id: id,
+        team: team,
+        kind: p.kind === 'under' ? 'under' : 'press',
+        startMs: p.startMs || 0,
+        endMs: typeof p.endMs === 'number' ? p.endMs : null
+      });
     });
     s.events.sort(byTime('ms'));
     s.phases.sort(byTime('startMs'));
@@ -116,7 +125,7 @@
     };
     old.events.forEach(function (e) { raw.events[uid()] = { team: e.team, result: e.result, ms: e.ms, at: e.at }; });
     (old.phases || []).forEach(function (p) {
-      raw.phases[uid()] = { side: p.side, startMs: p.startMs, endMs: p.endMs };
+      raw.phases[uid()] = { team: p.side, kind: 'press', startMs: p.startMs, endMs: p.endMs };
     });
     return raw;
   }
