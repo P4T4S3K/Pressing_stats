@@ -6,16 +6,46 @@
 <title>Pressing Stats</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="role-both">
 <header class="topbar">
-  <h1>Pressing Stats</h1>
+  <div class="brand">
+    <h1>Pressing Stats</h1>
+    <span class="sync-pill" id="syncPill">This device only</span>
+  </div>
   <div class="clock">
     <span id="clock" class="clock-time">00:00</span>
     <button id="clockBtn" class="ctrl">Start clock</button>
+    <button id="matchBtn" class="ctrl" hidden>Match</button>
   </div>
 </header>
 
-<main>
+<section id="setup" class="setup" hidden>
+  <h2>Match setup</h2>
+  <p class="hint">Both operators must join the <b>same match code</b>. Each one then picks their role.</p>
+  <div class="code-row">
+    <label for="matchCode">Match code</label>
+    <input id="matchCode" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <button id="newCodeBtn" class="ctrl">New code</button>
+  </div>
+  <div class="role-buttons">
+    <button class="role role-a" data-role="A"><b>Operator Team A</b><span>My team: we press</span></button>
+    <button class="role role-b" data-role="B"><b>Operator Team B</b><span>Opponent: we are under pressure</span></button>
+    <button class="role role-view" data-role="view"><b>Report only</b><span>Coach / bench, no buttons</span></button>
+    <button class="role role-both" data-role="both"><b>Both teams</b><span>One device records everything</span></button>
+  </div>
+
+  <div id="share" class="share" hidden>
+    <h3>Invite the other devices to match <span id="shareCode"></span></h3>
+    <div class="share-grid" id="shareGrid"></div>
+  </div>
+
+  <p class="setup-foot">
+    <a href="?local=1" id="localLink">Use this device only, without live sync</a>
+    <button id="closeSetupBtn" class="ctrl" hidden>Close</button>
+  </p>
+</section>
+
+<main id="main">
   <section class="phases">
     <h2 class="section-title">Who is pressing now?</h2>
     <div class="phase-buttons">
@@ -30,7 +60,7 @@
         <span class="phase-time" id="phaseTimeB">00:00</span>
       </button>
     </div>
-    <p class="phase-status" id="phaseStatus">No pressing phase running. Tap a button when a pressing phase starts, tap it again when it ends.</p>
+    <p class="phase-status" id="phaseStatus"></p>
   </section>
 
   <section class="teams">
@@ -51,7 +81,7 @@
   </section>
 
   <div class="toolbar">
-    <button id="undoBtn" class="ctrl">Undo last</button>
+    <button id="undoBtn" class="ctrl">Undo my last</button>
     <button id="csvBtn" class="ctrl">Export CSV</button>
     <button id="resetBtn" class="ctrl danger">Reset match</button>
   </div>
@@ -120,6 +150,8 @@
   </section>
 </main>
 
+<script src="config.js"></script>
+<script src="store.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

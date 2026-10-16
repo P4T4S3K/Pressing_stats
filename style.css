@@ -223,3 +223,85 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
   .press { font-size: 1rem; padding: 24px 4px; }
   .phase-title { font-size: 1.1rem; }
 }
+
+/* ---- Live sync: status, match setup, roles ---- */
+.brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.sync-pill { font-size: .75rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #3a4150; color: #fff; }
+.sync-pill.online { background: var(--ok); }
+.sync-pill.offline { background: #b7791f; }
+.sync-pill.error { background: var(--ko); }
+
+.setup {
+  max-width: 960px;
+  margin: 16px auto;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.setup h2 { margin-top: 0; }
+.setup .hint { color: var(--muted); margin-top: 0; }
+.code-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.code-row label { font-weight: 700; }
+#matchCode {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  width: 9em;
+  padding: 6px 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+.role-buttons { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.role {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 14px;
+  border-radius: 12px;
+  border: 3px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.role b { font-size: 1.1rem; }
+.role span { font-size: .85rem; color: var(--muted); }
+.role-a { border-color: var(--team-a); }
+.role-a b { color: var(--team-a); }
+.role-b { border-color: var(--team-b); }
+.role-b b { color: var(--team-b); }
+
+.share { margin-top: 18px; }
+.share h3 { font-size: 1rem; }
+.share-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.share-card { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.share-A b { color: var(--team-a); }
+.share-B b { color: var(--team-b); }
+.share-card .qr { width: 140px; max-width: 100%; aspect-ratio: 1; }
+.share-card .qr svg { width: 100%; height: 100%; }
+.share-card input { width: 100%; font-size: .75rem; padding: 4px; border: 1px solid var(--line); border-radius: 6px; }
+.setup-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0 0; font-size: .9rem; }
+.setup-foot a { color: var(--muted); }
+@media (max-width: 600px) {
+  .share-grid { grid-template-columns: 1fr; }
+  .role-buttons { grid-template-columns: 1fr; }
+}
+
+/* One operator per team: show only that team's buttons, bigger. */
+.role-A .team-b, .role-A #phaseB, .role-A .team-b,
+.role-B .team-a, .role-B #phaseA { display: none; }
+.role-A .teams, .role-B .teams,
+.role-A .phase-buttons, .role-B .phase-buttons { grid-template-columns: minmax(0, 1fr); }
+.role-A .press, .role-B .press { padding: 40px 12px; font-size: 1.6rem; }
+.role-A .phase, .role-B .phase { padding: 22px 10px; }
+
+/* Report only: no recording controls. */
+.role-view .phases, .role-view .teams, .role-view #undoBtn,
+.role-view #resetBtn, .role-view #clockBtn { display: none; }
+
+.ctrl:disabled { opacity: .45; cursor: default; }
+[hidden] { display: none !important; }

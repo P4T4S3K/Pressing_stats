@@ -34,6 +34,50 @@ number of phases, average and longest phase, a pressing-time balance bar, a **ma
 - Extras: match clock, **Undo last** (also undoes phase changes), **Export CSV**, **Reset match**.
 - Data is stored in the browser (`localStorage`), so a page reload does not lose the match.
 
+## Two operators with live sync
+
+One operator records **Team A** (my team), the other records **Team B** (opponent), each on their own phone.
+Both see the same match clock and the same live report. A coach can follow along with a *Report only* link.
+
+1. Open the app and pick a **match code** (or keep the generated one).
+2. Choose a role:
+   - **Operator Team A**: only Team A's buttons, "We press" phase button
+   - **Operator Team B**: only Team B's buttons, "Under pressure" phase button
+   - **Report only**: live report without buttons (coach / bench)
+   - **Both teams**: one device records everything
+3. Tap **Match** (top right) to show links and QR codes for the other devices. Scan to join the same match.
+
+Each operator starts and ends their own team's pressing phases. Either operator can start/pause the shared
+clock. **Undo my last** only undoes taps made on that device. **Reset match** clears the match for everyone.
+If the connection drops, taps are kept and synced when the phone is back online.
+
+Live sync needs the one-time Firebase setup below. Without it, the app works on a single device as before.
+
+### Live sync setup (one time, free)
+
+1. Go to <https://console.firebase.google.com>, click **Create a project** (Google Analytics not needed).
+2. In the project: **Build → Realtime Database → Create Database**, choose a location, start in **locked mode**.
+3. Open the **Rules** tab, replace the rules with the following and click **Publish**:
+
+   ```json
+   {
+     "rules": {
+       ".read": false,
+       ".write": false,
+       "matches": {
+         "$match": { ".read": true, ".write": true }
+       }
+     }
+   }
+   ```
+
+   Anyone who knows a match code can read and write that match, so use codes that are not easy to guess
+   (the generated 6-character codes are fine).
+4. **Project settings** (gear icon) → **Your apps** → **Web** (`</>`) → register an app (no hosting needed).
+   Copy the `firebaseConfig` object it shows.
+5. Paste it into [`config.js`](config.js) as `window.PRESSING_FIREBASE_CONFIG = { ... };`, make sure it
+   contains `databaseURL`, and commit. GitHub Pages redeploys automatically.
+
 ## Running
 
 No build or installation needed — open `index.html` in any browser (desktop, tablet or phone).
@@ -47,5 +91,8 @@ To host it online, enable **GitHub Pages** in the repository settings
 | File | Purpose |
 | --- | --- |
 | `index.html` | Page layout |
+| `config.js` | Firebase settings for live sync (`null` = this device only) |
+| `store.js` | Match data: this device only or live via Firebase |
+| `vendor/qrcode.js` | QR code generator (MIT, Kazuhiko Arase) |
 | `style.css` | Team and button colours, layout |
-| `app.js` | Recording logic, report, CSV export |
+| `app.js` | Roles, recording logic, report, CSV export |
