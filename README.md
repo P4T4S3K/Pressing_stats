@@ -4,6 +4,22 @@ A lightweight web app for recording **pressing actions** of two teams during a f
 
 ## How it works
 
+### Pressing phases – who is pressing now?
+
+At the top there are two big toggle buttons:
+
+- 🔵 **We press** – *my team* (Team A) is pressing.
+- 🟠 **Under pressure** – the *opponent* (Team B) is pressing us.
+
+Tap a button when a pressing phase starts and tap it again when it ends. Tapping the other button
+switches directly. The match clock starts automatically with the first phase.
+
+The report shows for both sides: total pressing time, share of match time, share of pressing time,
+number of phases, average and longest phase, a pressing-time balance bar, a **match timeline**
+(phases as bars, pressing actions as dots) and pressing time per 15-minute period.
+
+### Pressing actions
+
 - Each team has its own panel and colour (**Team A – blue**, **Team B – orange**).
 - In each panel there are just two buttons:
   - 🟢 **Successful** – the press won the ball / forced the desired outcome
@@ -15,7 +31,7 @@ A lightweight web app for recording **pressing actions** of two teams during a f
   - success-rate bars
   - breakdown by 15-minute periods (uses the optional match clock)
   - event log
-- Extras: optional match clock, **Undo last**, **Export CSV**, **Reset match**.
+- Extras: match clock, **Undo last** (also undoes phase changes), **Export CSV**, **Reset match**.
 - Data is stored in the browser (`localStorage`), so a page reload does not lose the match.
 
 ## Running
